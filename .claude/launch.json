@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "laundry-demo",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "demos/laundry-site"],
+      "port": 8765
+    },
+    {
+      "name": "restaurant-demo",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8766", "--directory", "demos/restaurant-site"],
+      "port": 8766
+    }
+  ]
+}

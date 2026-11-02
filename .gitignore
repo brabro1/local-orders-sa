@@ -1,0 +1,15 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# secrets and local config
+.env
+.env.*
+*.pem
+.claude/settings.local.json
+
+# dependencies and logs
+node_modules/
+*.log
