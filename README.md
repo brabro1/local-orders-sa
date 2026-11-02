@@ -44,7 +44,7 @@ python -m http.server 8766 --directory demos/restaurant-site
 
 ### رابط عام للزيارات
 
-لنترك مع صاحب المحل رابطًا أو رمز QR، نرفع مجلد `demos/<name>-site` على استضافة ثابتة مجانية مثل Netlify Drop أو Cloudflare Pages. ملاحظة: GitHub Pages لمستودع خاص يحتاج خطة GitHub مدفوعة.
+لنترك مع صاحب المحل رابطًا أو رمز QR، نرفع مجلد `demos/<name>-site` على استضافة ثابتة مجانية مثل GitHub Pages (المستودع عام) أو Netlify Drop أو Cloudflare Pages.
 
 ## طريقة العمل بيننا
 
