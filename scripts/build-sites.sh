@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # Wraps each demo page (demos/<name>.html, written as an artifact fragment) into a
-# standalone page at demos/<name>-site/index.html that any static host can serve.
+# standalone page at demos/<name>-site/index.html that any static host can serve,
+# and copies the demo's photos (demos/img/<name>/) next to it.
 set -e
 cd "$(dirname "$0")/.."
 for src in demos/*.html; do
@@ -15,5 +16,9 @@ for src in demos/*.html; do
     cat "$src"
     printf '\n%s\n%s\n' '</body>' '</html>'
   } > "$out"
+  if [ -d "demos/img/$name" ]; then
+    rm -rf "demos/$name-site/img" && mkdir -p "demos/$name-site/img" && cp -r "demos/img/$name" "demos/$name-site/img/"
+    rm -f "demos/$name-site/img/$name/credits.js.txt"
+  fi
   echo "built $out"
 done
