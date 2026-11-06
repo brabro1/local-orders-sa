@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>نماذج العرض</title>
+<meta name="description" content="نماذج عرض لصفحات الطلب على الجوال ولوحات الطلبات للمحلات المحلية في السعودية.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@600;700&family=Tajawal:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F4F6F8; --card:#FFFFFF; --ink:#16202B; --muted:#5B6773; --line:#E1E6EB;
+  --accent:#0A55AA; --accent-ink:#FFFFFF; --soft:#EAF2FB; --note:#FFF6D6; --note-ink:#5A4500;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F151B; --card:#17202A; --ink:#E8EDF2; --muted:#9AA7B4; --line:#26323E;
+    --accent:#5AA2F0; --accent-ink:#06121F; --soft:#1A2A3B; --note:#2E2710; --note-ink:#F1DE9C;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.7 Tajawal,system-ui,sans-serif;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:760px;margin:0 auto;padding:40px 16px 56px}
+h1,h2{font-family:Alexandria,Tajawal,sans-serif;line-height:1.35;margin:0}
+h1{font-size:28px}
+h2{font-size:19px}
+.lead{color:var(--muted);margin:8px 0 28px}
+.cards{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:10px}
+.card p{margin:0;color:var(--muted)}
+.tag{display:inline-block;font-size:13px;font-weight:700;color:var(--accent);background:var(--soft);border-radius:999px;padding:2px 10px;margin-inline-start:6px;vertical-align:middle}
+.btn{justify-self:start;display:inline-block;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:700;border-radius:12px;padding:10px 18px}
+.btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.steps{margin:0;padding-inline-start:20px;color:var(--muted);font-size:15px}
+.box{margin-top:22px;background:var(--note);color:var(--note-ink);border-radius:14px;padding:16px 18px}
+.box h2{font-size:16px;margin-bottom:6px}
+.box ul{margin:0;padding-inline-start:20px}
+bdi{font-variant-numeric:tabular-nums;font-weight:700}
+footer{margin-top:28px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>نماذج العرض</h1>
+  <p class="lead">صفحات طلب على الجوال ولوحات طلبات للمحلات المحلية. افتح أي نموذج من الجوال أو الكمبيوتر.</p>
+
+  <div class="cards">
+    <section class="card">
+      <h2>تطبيق مغسلة «سنا» <span class="tag">يتثبّت على الجوال</span></h2>
+      <p>يعمل بدون إنترنت. فيه بطاقة الولاء، والاشتراكات الشهرية، والطلب في المحل للموظف.</p>
+      <ol class="steps">
+        <li><b>آيفون:</b> افتحه في Safari، ثم «مشاركة»، ثم «إضافة إلى الشاشة الرئيسية».</li>
+        <li><b>أندرويد:</b> افتحه في Chrome، ثم «تثبيت التطبيق».</li>
+      </ol>
+      <a class="btn" href="laundry-pwa/">افتح التطبيق</a>
+    </section>
+
+    <section class="card">
+      <h2>نموذج مغسلة «سنا»</h2>
+      <p>واجهة العميل ولوحة المحل: الطلب والموعد، قبول الطلب، جرد القطع وتعديل الفاتورة، وإيقاف مواعيد اليوم.</p>
+      <a class="btn" href="laundry/">افتح النموذج</a>
+    </section>
+
+    <section class="card">
+      <h2>نموذج مطعم «سُفرة الحارة»</h2>
+      <p>القائمة بالسعرات، تخصيص الوجبة، الاستلام لسيارتك، الصنف غير المتوفر، ووضع الزحمة.</p>
+      <a class="btn" href="restaurant/">افتح النموذج</a>
+    </section>
+  </div>
+
+  <div class="box">
+    <h2>أرقام للتجربة في تطبيق «سنا»</h2>
+    <ul>
+      <li>عميل مشترك في «باقة العائلة»: <bdi dir="ltr">0509876543</bdi></li>
+      <li>عميل عنده مكافأة ولاء: <bdi dir="ltr">0577778899</bdi></li>
+    </ul>
+  </div>
+
+  <footer>كلها نسخ عرض: الأسماء والأسعار افتراضية، ولا تُرسل طلبات أو مدفوعات حقيقية. البيانات تُحفظ في متصفح جهازك فقط.</footer>
+</main>
+</body>
+</html>

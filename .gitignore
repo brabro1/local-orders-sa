@@ -13,3 +13,6 @@ Thumbs.db
 # dependencies and logs
 node_modules/
 *.log
+
+# build output (rebuilt by scripts/build.py, published by GitHub Actions)
+_site/

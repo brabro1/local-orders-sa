@@ -1,0 +1,47 @@
+# Publishes the demos to GitHub Pages on every merge to main:
+# https://brabro1.github.io/local-orders-sa/
+# On pull requests it only builds, to catch a broken build before merging.
+name: Publish demos
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the site into _site/
+        run: python3 scripts/build.py
+      - name: Check every page exists
+        run: |
+          for p in index.html laundry/index.html restaurant/index.html laundry-pwa/index.html laundry-pwa/sw.js laundry-pwa/manifest.webmanifest; do
+            test -s "_site/$p" || { echo "missing _site/$p"; exit 1; }
+          done
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
