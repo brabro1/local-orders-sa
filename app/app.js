@@ -214,7 +214,9 @@ const R = {
   shop: null, shopMissing: false, offline: false,
   user: null, authKnown: false,
   orders: [], ordersLoaded: false,
-  card: null,            // customer: own loyalty card / plan (customers/{phone})
+  rawOrders: [],         // orders as the server last sent them; `orders` adds the steps still on their way
+  pending: new Map(),    // shop: order n → { from, to } shown already, waiting for the server
+  card: null,           // customer: own loyalty card / plan (customers/{phone})
   slotLoad: {},          // booked pickups per 'YYYY-MM-DD_slot'
   custCache: {},         // shop: cards of customers typed in the in-store order
 };
@@ -1242,14 +1244,18 @@ const O = {
   },
   adv(d) {
     const o = findOrder(Number(d.n)), act = o && nextAction(o);
-    if (!act || ui.busy) return;
+    if (!act || ui.busy || R.pending.has(o.n)) return;
     if (act.count) { ui.sheetO = { type: 'count', n: o.n, items: o.items.map(({ id, svc, qty }) => ({ id, svc, qty })) }; return; }
-    run('o', async () => {
-      const r = await D.call('advanceOrder', { n: o.n, to: act.to });
-      toast('o', statusLabel({ ...o, status: r.status }));
+    /* move it on screen now; the server checks it behind the scenes and we undo it if it says no */
+    R.pending.set(o.n, { from: o.status, to: act.to });
+    refreshOrders();
+    toast('o', statusLabel({ ...o, status: act.to }));
+    D.call('advanceOrder', { n: o.n, to: act.to }).then(r => {
       if (r.stamp) toast('o', r.stamp === 'reward' ? L('اكتملت بطاقة العميل · له خصم على طلبه القادم', 'Customer’s card is full · discount on their next order') : L('أُضيف ختم ولاء للعميل', 'Loyalty stamp added'));
+    }, e => {
+      R.pending.delete(o.n); refreshOrders(); renderAll();
+      toast('o', `${L(`ما تم تحديث الطلب ${o.n}`, `Order #${o.n} was not updated`)} · ${reasonText(e)}`);
     });
-    return false;
   },
   reject(d) { const n = Number(d.n); ui.rejecting = ui.rejecting === n ? null : n; },
   rreason(d) {
@@ -1472,7 +1478,7 @@ let stopOrders = null, stopCard = null;
 function watchOrders() {
   if (stopOrders) { stopOrders(); stopOrders = null; }
   if (stopCard) { stopCard(); stopCard = null; }
-  R.orders = []; R.ordersLoaded = false; R.card = null; R.custCache = {};
+  R.orders = []; R.rawOrders = []; R.pending.clear(); R.ordersLoaded = false; R.card = null; R.custCache = {};
   const u = R.user;
   if (SHOP && u && u.staff) {
     stopOrders = D.watchShopOrders(onOrders, () => toast('o', reasonText({ reason: 'staff-only' })));
@@ -1481,9 +1487,21 @@ function watchOrders() {
     stopCard = D.watchCustomer(u.phone, c => { R.card = c; renderAll(); });
   }
 }
+/* show a step the moment it is tapped; once the server's copy has moved on, the server's copy wins */
+function withPending(list) {
+  if (!R.pending.size) return list;
+  return list.map(o => {
+    const p = R.pending.get(o.n);
+    if (!p) return o;
+    if (o.status !== p.from) { R.pending.delete(o.n); return o; }
+    return { ...o, status: p.to, history: [...o.history, { s: p.to, t: Date.now(), by: 'staff' }], paid: p.to === 'done' ? true : o.paid };
+  });
+}
+function refreshOrders() { R.orders = withPending(R.rawOrders); }
 function onOrders(list) {
   const before = R.ordersLoaded ? new Map(R.orders.map(o => [o.n, o.status])) : null;
-  R.orders = list; R.ordersLoaded = true;
+  R.rawOrders = list; refreshOrders(); R.ordersLoaded = true;
+  list = R.orders;
   if (before) announce(before, list);
   renderAll();
 }
