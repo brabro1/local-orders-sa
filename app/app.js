@@ -188,6 +188,7 @@ const IC = {
   star: s => sv('<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9L12 3.5Z"/>', s),
   plus: s => sv('<path d="M12 5v14M5 12h14"/>', s),
   user: s => sv('<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>', s),
+  users: s => sv('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5a6 6 0 0 1 12 0"/><path d="M15.5 4.9a3.2 3.2 0 0 1 0 6.2M17.5 13.9a6 6 0 0 1 3.5 5.6"/>', s),
   download: s => sv('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', s),
 };
 
@@ -217,6 +218,7 @@ const R = {
   card: null,            // customer: own loyalty card / plan (customers/{phone})
   slotLoad: {},          // booked pickups per 'YYYY-MM-DD_slot'
   custCache: {},         // shop: cards of customers typed in the in-store order
+  customers: null,       // shop: every customer card, loaded while the customers list is open
 };
 const shopName = () => (R.shop ? (S.lang === 'en' ? R.shop.nameEn || R.shop.name : R.shop.name) : '');
 
@@ -902,6 +904,61 @@ function oPlanSheet(sh) {
     <div class="wk-step"><span class="wk-n">3</span>${L('استلم المبلغ نقدًا أو بالشبكة، ثم فعّل', 'Take payment by cash or card, then turn it on')}</div>
     <button class="btn primary wide wk-big split" data-a="plsave" ${ok && pick && !ui.busy ? '' : 'disabled'} ${ui.busy ? 'aria-busy="true"' : ''}><span>${IC.check(22)} ${ui.busy ? L('جارٍ التفعيل…', 'Turning on…') : L('استلمت المبلغ · فعّل', 'Paid · turn on')}</span><span>${pick ? money(pick.price) : ''}</span></button>`);
 }
+/* every customer of the shop: who they are, how often they come, their loyalty card and plan */
+function oCustomers(sh) {
+  const close = `<button class="icon-btn" data-a="closesheet" aria-label="${L('إغلاق', 'Close')}">✕</button>`;
+  const list = R.customers;
+  /* the card counts app orders; recent orders on this device add the in-store ones */
+  const recent = {};
+  R.orders.forEach(o => {
+    if (!o.customerPhone || ['rejected', 'cancelled'].includes(o.status)) return;
+    const r = recent[o.customerPhone] || (recent[o.customerPhone] = { n: 0, last: 0 });
+    r.n++; r.last = Math.max(r.last, o.created);
+  });
+  const rows = (list || []).map(c => {
+    const r = recent[c.phone] || { n: 0, last: 0 };
+    return { ...c, nOrders: Math.max(c.orders || 0, r.n), last: Math.max(c.lastOrder || 0, r.last), sub: activeSub(c.sub) };
+  }).sort((a, b) => (b.last || b.since) - (a.last || a.since));
+  const subs = rows.filter(c => c.sub).length, rewards = rows.filter(c => c.rewards > 0).length;
+  const row = c => {
+    const name = c.name && c.name !== WALKIN_NAME ? c.name : '', local = normPhone(c.phone);
+    const soon = c.sub && c.sub.renews && dayOffset(c.sub.renews) <= 3;
+    const wa = waLink(local, L(`مرحبًا ${name}، معك ${shopName()}`, `Hello ${name}, this is ${shopName()}`));
+    const chips = [
+      `<span class="chip">${c.nOrders ? L(`${c.nOrders} طلب`, `${c.nOrders} orders`) : L('بدون طلبات', 'No orders yet')}</span>`,
+      `<span class="chip brand">${IC.star(13)} <span class="num">${c.stamps || 0}/${STAMP_GOAL}</span></span>`,
+      c.rewards > 0 ? `<span class="chip ok">${L('له مكافأة', 'Has a reward')}</span>` : '',
+      c.sub ? `<span class="chip ${soon ? 'warn' : 'ok'}">${esc(P(planOf(c.sub.plan).name))} · ${L(`باقي ${c.sub.left}`, `${c.sub.left} left`)}${c.sub.renews ? ` · ${L('حتى', 'until')} ${dayLabel(dayOffset(c.sub.renews))}` : ''}</span>` : '',
+    ].join('');
+    return `<li class="cust-row" data-hay="${esc(`${name} ${local}`.toLowerCase())}">
+      <span class="gi kids cust-ic" aria-hidden="true">${IC.user(20)}</span>
+      <div class="cust-main"><div class="cust-top"><b>${name ? esc(name) : `<span class="muted">${L('بدون اسم', 'No name')}</span>`}</b><span class="num muted small" dir="ltr">${esc(local)}</span></div>
+        <div class="cust-chips">${chips}</div>
+        ${c.last ? `<span class="muted small">${L('آخر طلب', 'Last order')}: ${ago(c.last)}</span>` : ''}</div>
+      ${wa ? `<a class="icon-btn" href="${wa}" target="_blank" rel="noopener" aria-label="${L('واتساب', 'WhatsApp')} ${esc(name || local)}">${IC.chat(19)}</a>` : ''}</li>`;
+  };
+  const body = list == null ? `<div class="empty" role="status">${L('جارٍ التحميل…', 'Loading…')}</div>`
+    : !rows.length ? `<div class="empty"><span class="gi kids" aria-hidden="true">${IC.users(28)}</span><span>${L('ما فيه عملاء للحين. كل عميل يطلب من التطبيق، أو تكتب جواله في طلب المحل، ينضاف هنا.', 'No customers yet. Anyone who orders in the app, or whose mobile you add to an in-store order, shows up here.')}</span></div>`
+    : `<div class="cust-sum"><span class="chip">${L(`${rows.length} عميل`, `${rows.length} customers`)}</span>${subs ? `<span class="chip ok">${L(`${subs} مشترك`, `${subs} on a plan`)}</span>` : ''}${rewards ? `<span class="chip brand">${L(`${rewards} لهم مكافأة`, `${rewards} with a reward`)}</span>` : ''}</div>
+      <div class="field"><label class="sr" for="cu-q">${L('بحث', 'Search')}</label><input class="input" id="cu-q" data-cu="q" type="search" autocomplete="off" placeholder="${L('ابحث بالاسم أو الجوال', 'Search by name or mobile')}" value="${esc(sh.q)}"></div>
+      <ul class="cust-list" aria-labelledby="cu-title">${rows.map(row).join('')}</ul>
+      <p class="empty cust-none" hidden>${L('ما لقينا عميل بهذا البحث.', 'No customer matches.')}</p>`;
+  return `<div class="sheet-wrap" data-a="closesheet" data-self="1"><div class="sheet pad" role="dialog" aria-modal="true" aria-labelledby="cu-title">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="sheet-head"><h2 id="cu-title" tabindex="-1">${L('العملاء', 'Customers')}</h2>${close}</div>
+    ${body}</div></div>`;
+}
+/* search filters the rows already on screen, so typing never loses the cursor */
+function filterCustomers() {
+  const sh = ui.sheetO, box = document.querySelector('#dev-o .cust-list');
+  if (!sh || !box) return;
+  const q = normPhone(sh.q) && /^\+?\d+$/.test(normPhone(sh.q)) ? normPhone(sh.q) : sh.q.trim().toLowerCase();
+  let shown = 0;
+  box.querySelectorAll('.cust-row').forEach(li => { const hit = !q || li.dataset.hay.includes(q); li.hidden = !hit; if (hit) shown++; });
+  const none = document.querySelector('#dev-o .cust-none'); if (none) none.hidden = shown > 0;
+}
+let stopCustomers = null;
+function closeCustomers() { if (stopCustomers) { stopCustomers(); stopCustomers = null; } R.customers = null; }
 const WALKIN_NAME = 'عميل المحل';
 /* the name the shop already has for this mobile: from the customer's card, or an earlier order */
 function knownName(phone) {
@@ -926,6 +983,7 @@ function oCountSheet() {
   if (sh.type === 'prefs') return prefsSheet('o');
   if (sh.type === 'walkin') return oWalkin(sh);
   if (sh.type === 'plan') return oPlanSheet(sh);
+  if (sh.type === 'custs') return oCustomers(sh);
   const o = findOrder(sh.n);
   /* preview of the new bill: recalculate from the counted items, not the order's saved totals */
   const t = calc({ ...o, totals: null, items: sh.items });
@@ -979,8 +1037,8 @@ function renderOwner() {
   const statBtn = (k, label, warn) => `<button class="stat ${warn ? 'warn' : ''}" data-a="otab" data-v="${k}" aria-pressed="${tab === k}"><b class="num">${by(k).length}</b><span>${label}</span></button>`;
   const empties = { new: L('لا توجد طلبات جديدة. أي طلب من تطبيق العميل يظهر هنا فورًا.', 'No new orders. Anything placed in the customer app shows up here instantly.'), active: L('لا توجد طلبات قيد التنفيذ.', 'Nothing in progress.'), ready: L('لا توجد طلبات جاهزة.', 'Nothing ready.'), done: L('لا توجد طلبات مكتملة بعد.', 'No completed orders yet.') };
   const body = `
-  <div class="o-head pad"><div style="flex:1;min-width:0"><h1 class="o-title" tabindex="-1" data-focus>${esc(shopName())}</h1><div class="muted small">${L('لوحة الطلبات', 'Orders dashboard')}</div></div>
-    <button class="toggle" role="switch" aria-checked="${LIVE.open}" data-a="toggle" data-k="open"><span>${LIVE.open ? L('نستقبل الطلبات', 'Open') : L('مغلق مؤقتًا', 'Closed')}</span><span class="knob"></span></button>${gearBtn()}</div>
+  <div class="o-head pad"><div style="flex:1;min-width:0"><h1 class="o-title" tabindex="-1" data-focus>${esc(shopName())}</h1><div class="muted small">${L('لوحة الطلبات', 'Orders dashboard')}${LIVE.open ? '' : ` · <button class="closed-pill" data-a="otab" data-v="settings">${L('مغلق مؤقتًا', 'Closed today')}</button>`}</div></div>
+    <button class="btn sm hdr-btn" data-a="custs">${IC.users(19)} ${L('العملاء', 'Customers')}</button>${gearBtn()}</div>
   ${audioReady() ? '' : `<div class="pad" style="padding-top:8px"><button class="btn wide" data-a="sound">${IC.alert(18)} ${L('فعّل صوت الطلبات الجديدة', 'Turn on the new-order sound')}</button></div>`}
   <div class="pad" style="padding-top:8px"><button class="btn primary wide wk-big" data-a="walkin">${IC.plus(24)} ${L('طلب جديد في المحل', 'New in-store order')}</button></div>
   ${PLANS.length ? `<div class="pad" style="padding-top:8px"><button class="btn wide" data-a="plan">${IC.card(20)} ${L('اشتراك شهري لعميل', 'Monthly plan for a customer')}</button></div>` : ''}
@@ -993,6 +1051,7 @@ function renderOwner() {
   </div>
   <div class="pad">${list ? (list.length ? `<div class="ocards">${list.map(oCard).join('')}</div>` : `<div class="empty"><span class="gi men" aria-hidden="true">${IC.receipt(28)}</span><span>${empties[tab]}</span></div>`) : `<div class="stack" style="padding-top:4px">${oSettings()}</div>`}</div>`;
   paint('o', tab + S.lang, `<div class="scroller">${body}</div>${oCountSheet()}`);
+  if (ui.sheetO && ui.sheetO.type === 'custs') filterCustomers();
 }
 
 /* ---------- paint: keeps scroll, restores focus, manages dialogs ---------- */
@@ -1145,7 +1204,7 @@ const C = {
   sq(d) { const sh = ui.sheetC; sh.qty = Math.max(1, Math.min(99, sh.qty + Number(d.d))); },
   addcart() { const sh = ui.sheetC; if (!sh.svc) return; S.cust.cart[`${sh.id}|${sh.svc}`] = sh.qty; ui.sheetC = null; toast('c', `${L('أُضيف:', 'Added:')} ${N(ITEMS[sh.id])} × ${sh.qty}`); },
   rmcart() { const sh = ui.sheetC; delete S.cust.cart[`${sh.id}|${sh.svc}`]; ui.sheetC = null; toast('c', `${L('أُزيل:', 'Removed:')} ${N(ITEMS[sh.id])}`); },
-  closesheet(d, el, ev) { if (d.self && ev.target !== el) return false; ui.sheetC = null; ui.sheetO = null; },
+  closesheet(d, el, ev) { if (d.self && ev.target !== el) return false; ui.sheetC = null; ui.sheetO = null; closeCustomers(); },
   line(d) {
     const q = (S.cust.cart[d.k] || 0) + Number(d.d);
     if (q <= 0) { delete S.cust.cart[d.k]; toast('c', `${L('أُزيل:', 'Removed:')} ${N(ITEMS[d.k.split('|')[0]])}`); }
@@ -1274,6 +1333,12 @@ const O = {
     });
     return false;
   },
+  custs() {
+    ui.sheetO = { type: 'custs', q: '' };
+    closeCustomers();
+    stopCustomers = D.watchCustomers(list => { R.customers = list; renderAll(); },
+      () => { closeCustomers(); ui.sheetO = null; renderAll(); toast('o', reasonText({ reason: 'network' })); });
+  },
   plan() { ui.sheetO = { type: 'plan', phone: '', name: '', plan: null, done: null, err: '' }; },
   plnew() { O.plan(); },
   plpick(d) { ui.sheetO.plan = d.id; ui.sheetO.err = ''; },
@@ -1332,7 +1397,7 @@ const O = {
       .finally(() => { ui.busy = false; renderAll(); });
     return false;
   },
-  signout() { ui.sheetO = null; ui.pin = ''; D.logout(); },
+  signout() { ui.sheetO = null; closeCustomers(); ui.pin = ''; D.logout(); },
   closesheet: C.closesheet,
 };
 
@@ -1366,6 +1431,10 @@ function bind(which, map) {
     if (ev.target.dataset && ev.target.dataset.otp && ui.sheetC && ui.sheetC.type === 'otp') {
       ui.sheetC[ev.target.dataset.otp] = ev.target.value;
       if (ui.sheetC.err) { ui.sheetC.err = ''; ev.target.removeAttribute('aria-invalid'); const er = document.getElementById('otp-err'); if (er) er.remove(); }
+      return;
+    }
+    if (ev.target.dataset && ev.target.dataset.cu && ui.sheetO && ui.sheetO.type === 'custs') {
+      ui.sheetO.q = ev.target.value; filterCustomers();
       return;
     }
     if (ev.target.dataset && ev.target.dataset.pl && ui.sheetO && ui.sheetO.type === 'plan') {

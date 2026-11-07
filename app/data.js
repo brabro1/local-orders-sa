@@ -91,6 +91,15 @@ export function watchCustomer(phone, cb) {
   return onSnapshot(doc(shopRef, 'customers', phone), s => cb(s.exists() ? s.data() : null), () => cb(null));
 }
 
+/** Every customer card of the shop (staff only, see firestore.rules): name, mobile, stamps, plan, orders. */
+export function watchCustomers(cb, onError) {
+  const ms = t => (t && t.toMillis ? t.toMillis() : 0);
+  return onSnapshot(collection(shopRef, 'customers'), qs => cb(qs.docs.map(d => {
+    const c = d.data();
+    return { ...c, phone: c.phone || d.id, lastOrder: ms(c.lastOrderAt), since: ms(c.createdAt) };
+  })), onError);
+}
+
 export async function getCustomer(phone) {
   const s = await getDoc(doc(shopRef, 'customers', phone));
   return s.exists() ? s.data() : null;
