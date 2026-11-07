@@ -1,5 +1,6 @@
 // Offline support: the app shell is cached on install; fonts are cached the first time they load.
-// Bump VERSION whenever index.html or the icons change so phones pick up the new copy.
+// VERSION is replaced at build time (scripts/build-sites.sh) with a checksum of this folder,
+// so phones pick up every change automatically. No need to bump it by hand.
 const VERSION = 'sana-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];
 

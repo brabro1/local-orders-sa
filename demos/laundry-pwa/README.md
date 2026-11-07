@@ -13,7 +13,7 @@
 python -m http.server 8770 --directory demos/laundry-pwa
 ```
 
-افتح `http://localhost:8770`. عشان تجربه على الجوال لازم يكون على رابط **https**، مثل Netlify Drop أو Cloudflare Pages أو GitHub Pages.
+افتح `http://localhost:8770`. عشان تجربه على الجوال لازم يكون على رابط **https**: الرابط المنشور https://brabro1.github.io/local-orders-sa/laundry-pwa/ يتحدث تلقائيًا بعد كل دمج في `main`.
 
 ## للتجربة
 
@@ -24,4 +24,4 @@ python -m http.server 8770 --directory demos/laundry-pwa
 
 الملفات ثابتة، فيقدر Capacitor يلفّها مباشرة (`webDir` = هذا المجلد). قبل النشر في المتاجر نضيف الإشعارات، وبطاقة الولاء في Apple Wallet و Google Wallet، ومسح الباركود. أبل ترفض التطبيق إذا كان مجرد موقع ملفوف بدون مزايا من الجوال نفسه (البند 4.2).
 
-لما تعدّل `index.html`، غيّر `VERSION` في `sw.js` عشان الجوالات تاخذ النسخة الجديدة.
+`VERSION` في `sw.js` يتغيّر تلقائيًا وقت البناء (`scripts/build.py`)، فالجوالات تاخذ النسخة الجديدة بدون ما تغيّره يدويًا.
