@@ -1,0 +1,17 @@
+{
+  "name": "local-orders-firebase",
+  "private": true,
+  "description": "Database rules, server functions and tests for the ordering app (runs on the local Firebase emulator).",
+  "scripts": {
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test": "firebase emulators:exec --only auth,firestore,functions \"node --test --test-concurrency=1 tests/**/*.test.js\"",
+    "emulators": "firebase emulators:start --only auth,firestore,functions",
+    "seed": "node seed/seed.js"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.2.0",
+    "firebase-admin": "^14.5.0",
+    "firebase-tools": "^15.35.0"
+  }
+}

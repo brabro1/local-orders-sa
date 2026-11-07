@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Who can read what. Nobody writes orders, customers, slots or counters from the app:
+// those go through the functions in functions/index.js, which check prices and steps.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    // shop device, signed in with the shop PIN (token made by staffLogin)
+    function isStaff(shopId) {
+      return signedIn()
+        && request.auth.token.get('role', '') == 'staff'
+        && request.auth.token.get('shopId', '') == shopId;
+    }
+    // customer phone verified by SMS code, as +9665XXXXXXXX
+    function myPhone() {
+      return signedIn() ? request.auth.token.get('phone_number', '') : '';
+    }
+
+    match /shops/{shopId} {
+      // menu, prices, districts, slots, open/closed: what the customer app shows
+      allow get, list: if true;
+      // the shop device may only flip its three live switches
+      allow update: if isStaff(shopId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['live'])
+        && request.resource.data.live.keys().hasOnly(['open', 'dryClean', 'todaySlots'])
+        && request.resource.data.live.open is bool
+        && request.resource.data.live.dryClean is bool
+        && request.resource.data.live.todaySlots is bool;
+      allow create, delete: if false;
+
+      match /orders/{orderId} {
+        // staff see every order of their shop; a customer sees only orders on their phone
+        allow get, list: if isStaff(shopId)
+          || (myPhone() != '' && resource.data.customerPhone == myPhone());
+        allow write: if false;
+      }
+
+      match /customers/{phone} {
+        allow get: if isStaff(shopId) || (myPhone() != '' && phone == myPhone());
+        allow list: if isStaff(shopId);
+        allow write: if false;
+      }
+
+      // only a count per slot, no personal data: the app greys out full slots
+      match /slotLoad/{slotKey} {
+        allow get, list: if true;
+        allow write: if false;
+      }
+
+      // PIN hash, login attempts, order counter
+      match /private/{doc} {
+        allow read, write: if false;
+      }
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
