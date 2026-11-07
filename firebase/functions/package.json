@@ -1,0 +1,13 @@
+{
+  "name": "local-orders-functions",
+  "private": true,
+  "description": "Server functions for the ordering app: place, cancel, count and move orders; shop PIN login.",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  }
+}
