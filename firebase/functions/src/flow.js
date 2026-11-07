@@ -53,12 +53,13 @@ function slotProblem(shop, slotDate, slotId, load, nowMs) {
   const live = shop.live || {};
   const slot = (shop.slots || []).find(s => s.id === slotId);
   if (!slot) return 'slot-unknown';
-  if (live.open === false) return 'closed';
   const now = riyadhNow(nowMs);
   const days = r.bookDays || 3;
   const allowed = Array.from({ length: days }, (_, i) => riyadhDate(nowMs, i));
   if (!allowed.includes(slotDate)) return 'slot-date';
+  /* "closed" and "today's pickups paused" only close today; customers can still book from tomorrow */
   if (slotDate === now.date) {
+    if (live.open === false) return 'closed';
     if (live.todaySlots === false) return 'slot-paused';
     if (now.hour > slot.start - 1) return 'slot-past';
   }
