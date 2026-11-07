@@ -304,6 +304,19 @@ details.wa[open] summary::after{content:"إخفاء"}
 /* owner */
 .o-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .o-title{font:700 18px/1.3 var(--f-display)}
+.hdr-btn{flex:none;display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.closed-pill{display:inline;padding:1px 8px;border-radius:999px;border:0;background:var(--bad-soft);color:var(--bad);font:inherit;font-weight:700;cursor:pointer}
+/* customers list */
+.cust-sum{display:flex;flex-wrap:wrap;gap:6px}
+.cust-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cust-row{display:flex;align-items:flex-start;gap:12px;padding-block:12px;border-bottom:1px solid var(--line)}
+.cust-row:last-child{border-bottom:0}
+.cust-row[hidden]{display:none}
+.cust-ic{width:40px;height:40px;border-radius:13px}
+.cust-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cust-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.cust-top b{font-size:15.5px}
+.cust-chips{display:flex;flex-wrap:wrap;gap:6px}
 .toggle{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-size:14px;font-weight:700;text-align:start}
 .knob{width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:background .2s}
 .knob::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);transition:inset-inline-start .2s}
