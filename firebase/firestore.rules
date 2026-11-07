@@ -44,6 +44,12 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // monthly plans sold at the counter: the shop's own record of what it collected
+      match /planSales/{saleId} {
+        allow get, list: if isStaff(shopId);
+        allow write: if false;
+      }
+
       // only a count per slot, no personal data: the app greys out full slots
       match /slotLoad/{slotKey} {
         allow get, list: if true;

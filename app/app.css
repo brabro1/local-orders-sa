@@ -451,3 +451,8 @@ a.chip{text-decoration:none}
 .pinpad button:disabled{opacity:.4;cursor:not-allowed}
 .pinpad button.go{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .pinpad button:active:not(:disabled){transform:scale(.97)}
+/* shop: monthly plan picker */
+.plan-picks{display:grid;gap:8px}
+.plan-picks .choice{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 12px;text-align:start;width:100%}
+.plan-picks .choice span{grid-column:1}
+.plan-picks .choice .plan-price{grid-column:2;grid-row:1/span 2;font-size:17px}

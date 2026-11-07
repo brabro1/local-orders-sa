@@ -407,3 +407,33 @@ exports.saveWalkin = onCall(async req => {
     return { n, totals: fields.totals };
   });
 });
+
+/**
+ * The shop sells a monthly plan at the counter (paid cash or card) and turns it on for a mobile number.
+ * It starts a fresh month today: all the plan's pieces, valid for 30 days. Activating again replaces
+ * the current plan (pieces left over from the old month do not carry over).
+ * Each sale is also kept in shops/{shopId}/planSales so the shop can count what it collected.
+ * data: { shopId, phone, plan, name? }
+ */
+exports.setPlan = onCall(async req => {
+  const shopId = shopIdOf(req.data);
+  requireStaff(req, shopId);
+  const d = req.data || {};
+  const phone = F.e164(d.phone);
+  if (!phone) fail('invalid-argument', 'phone');
+  const name = text(d.name, 60);
+  const R = refs(shopId);
+  const now = Date.now();
+  return db.runTransaction(async tx => {
+    const [shopSnap, cSnap] = await Promise.all([tx.get(R.shop), tx.get(R.customer(phone))]);
+    if (!shopSnap.exists) fail('not-found', 'shop');
+    const plan = (shopSnap.data().plans || []).find(p => p.id === d.plan);
+    if (!plan) fail('invalid-argument', 'plan');
+    const c = cSnap.exists ? cSnap.data() : newCustomer(phone, name, null, now);
+    if (name && !c.name) c.name = name;
+    const sub = { plan: plan.id, left: plan.pieces, since: F.riyadhDate(now), renews: F.riyadhDate(now, 30), price: plan.price };
+    tx.set(R.customer(phone), { ...c, sub });
+    tx.set(R.shop.collection('planSales').doc(), { phone, plan: plan.id, price: plan.price, at: Timestamp.fromMillis(now) });
+    return { phone: F.localPhone(phone), name: c.name || '', sub };
+  });
+});

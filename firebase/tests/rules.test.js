@@ -89,6 +89,15 @@ test('staff see all orders and customers of their shop only', async () => {
   await assertFails(getDocs(orders(staff('other-shop'))));
 });
 
+test('plan sales are for the shop only', async () => {
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'shops', SHOP, 'planSales', 's1'), { phone: ME, plan: 'solo', price: 149 });
+  });
+  await assertSucceeds(getDocs(collection(staff(), 'shops', SHOP, 'planSales')));
+  await assertFails(getDocs(collection(customer(ME), 'shops', SHOP, 'planSales')));
+  await assertFails(setDoc(doc(staff(), 'shops', SHOP, 'planSales', 's2'), { phone: ME, plan: 'solo', price: 0 }));
+});
+
 test('PIN hash and counters are never readable', async () => {
   await assertFails(getDoc(doc(staff(), 'shops', SHOP, 'private', 'auth')));
   await assertFails(getDoc(doc(anon(), 'shops', SHOP, 'private', 'auth')));
