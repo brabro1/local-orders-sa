@@ -43,14 +43,25 @@ export const emulator = EMULATOR;
 export function watchUser(cb) {
   return onAuthStateChanged(auth, async u => {
     if (!u) return cb(null);
-    const t = await u.getIdTokenResult();
+    let t;
+    try {
+      t = await u.getIdTokenResult();
+    } catch {
+      /* the saved sign-in no longer works (account removed, or the emulator restarted): start signed out */
+      await signOut(auth).catch(() => {});
+      return;
+    }
     cb({ uid: u.uid, phone: u.phoneNumber || null, staff: t.claims.role === 'staff' && t.claims.shopId === SHOP_ID });
   });
 }
 
 /** The shop document: menu, prices, slots, rules, live switches. */
 export function watchShop(cb, onError) {
-  return onSnapshot(shopRef, s => cb(s.exists() ? s.data() : null), onError);
+  return onSnapshot(shopRef, { includeMetadataChanges: true }, s => {
+    /* "missing" only counts once the server says so, not when the local copy is just empty */
+    if (!s.exists() && s.metadata.fromCache) return;
+    cb(s.exists() ? s.data() : null);
+  }, onError);
 }
 
 /** Booked pickups per slot from `fromDate` (YYYY-MM-DD) on: { 'YYYY-MM-DD_slot': count }. */
