@@ -976,7 +976,7 @@ function renderOwner() {
   if (list) list = tab === 'new' ? list.sort((a, b) => a.created - b.created) : list.sort((a, b) => b.history[b.history.length - 1].t - a.history[a.history.length - 1].t);
   const tabBtn = (k, label) => `<button class="chip-btn" data-a="otab" data-v="${k}" aria-pressed="${tab === k}">${label}</button>`;
   /* the counters are the filter: tap «جديدة» to see the new orders */
-  const statBtn = (k, label, warn) => `<button class="stat ${warn ? 'warn' : ''}" data-a="otab" data-v="${k}" aria-pressed="${tab === k}"><b class="num">${by(k).length}</b><span>${label}</span></button>`;
+  const statBtn = (k, label, warn) => `<button class="stat ${warn ? 'warn' : ''}" data-a="otab" data-v="${k}" aria-pressed="${tab === k}"><b class="num">${by(k).length}</b><span class="stat-label">${label}<i class="dot dot-${k}" aria-hidden="true"></i></span></button>`;
   const empties = { new: L('لا توجد طلبات جديدة. أي طلب من تطبيق العميل يظهر هنا فورًا.', 'No new orders. Anything placed in the customer app shows up here instantly.'), active: L('لا توجد طلبات قيد التنفيذ.', 'Nothing in progress.'), ready: L('لا توجد طلبات جاهزة.', 'Nothing ready.'), done: L('لا توجد طلبات مكتملة بعد.', 'No completed orders yet.') };
   const body = `
   <div class="o-head pad"><div style="flex:1;min-width:0"><h1 class="o-title" tabindex="-1" data-focus>${esc(shopName())}</h1><div class="muted small">${L('لوحة الطلبات', 'Orders dashboard')}</div></div>
