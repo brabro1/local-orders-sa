@@ -125,5 +125,6 @@ test('Riyadh date and pickup slots', () => {
   assert.equal(F.slotProblem(shop, '2026-11-07', 'x', 0, morning), 'slot-unknown');
   assert.equal(F.slotProblem({ ...shop, live: { ...shop.live, todaySlots: false } }, '2026-11-07', 'a', 0, morning), 'slot-paused');
   assert.equal(F.slotProblem({ ...shop, live: { ...shop.live, todaySlots: false } }, '2026-11-08', 'a', 0, morning), null);
-  assert.equal(F.slotProblem({ ...shop, live: { ...shop.live, open: false } }, '2026-11-08', 'a', 0, morning), 'closed');
+  assert.equal(F.slotProblem({ ...shop, live: { ...shop.live, open: false } }, '2026-11-07', 'a', 0, morning), 'closed');
+  assert.equal(F.slotProblem({ ...shop, live: { ...shop.live, open: false } }, '2026-11-08', 'a', 0, morning), null, 'closed today, open for tomorrow');
 });

@@ -129,7 +129,7 @@ exports.placeOrder = onCall(async req => {
     const shopSnap = await tx.get(R.shop);
     if (!shopSnap.exists) fail('not-found', 'shop');
     const shop = shopSnap.data();
-    if (shop.live && shop.live.open === false) fail('failed-precondition', 'closed');
+    /* when the shop is closed today, pickups for later days and drop-offs still go through (see slotProblem) */
 
     const items = quick ? [] : guard(() => P.priceLines(shop, d.items));
     if (!quick && !items.length) fail('invalid-argument', 'items');
