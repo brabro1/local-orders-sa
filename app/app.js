@@ -974,23 +974,23 @@ function renderOwner() {
   const todayVal = os.filter(o => !['rejected', 'cancelled'].includes(o.status) && Date.now() - o.created < 864e5 && !awaitingCount(o)).reduce((s, o) => s + calc(o).total, 0);
   let list = tab === 'settings' ? null : by(tab);
   if (list) list = tab === 'new' ? list.sort((a, b) => a.created - b.created) : list.sort((a, b) => b.history[b.history.length - 1].t - a.history[a.history.length - 1].t);
-  const tabBtn = (k, label, n) => `<button class="chip-btn" data-a="otab" data-v="${k}" aria-pressed="${tab === k}">${label}${n != null ? `<span class="cnt num">${n}</span>` : ''}</button>`;
+  const tabBtn = (k, label) => `<button class="chip-btn" data-a="otab" data-v="${k}" aria-pressed="${tab === k}">${label}</button>`;
+  /* the counters are the filter: tap «جديدة» to see the new orders */
+  const statBtn = (k, label, warn) => `<button class="stat ${warn ? 'warn' : ''}" data-a="otab" data-v="${k}" aria-pressed="${tab === k}"><b class="num">${by(k).length}</b><span>${label}</span></button>`;
   const empties = { new: L('لا توجد طلبات جديدة. أي طلب من تطبيق العميل يظهر هنا فورًا.', 'No new orders. Anything placed in the customer app shows up here instantly.'), active: L('لا توجد طلبات قيد التنفيذ.', 'Nothing in progress.'), ready: L('لا توجد طلبات جاهزة.', 'Nothing ready.'), done: L('لا توجد طلبات مكتملة بعد.', 'No completed orders yet.') };
   const body = `
   <div class="o-head pad"><div style="flex:1;min-width:0"><h1 class="o-title" tabindex="-1" data-focus>${esc(shopName())}</h1><div class="muted small">${L('لوحة الطلبات', 'Orders dashboard')}</div></div>
     <button class="toggle" role="switch" aria-checked="${LIVE.open}" data-a="toggle" data-k="open"><span>${LIVE.open ? L('نستقبل الطلبات', 'Open') : L('مغلق مؤقتًا', 'Closed')}</span><span class="knob"></span></button>${gearBtn()}</div>
-  <div class="pad stats">
-    <div class="stat ${lateN ? 'warn' : ''}"><b>${by('new').length}</b><span>${lateN ? L(`جديدة · ${lateN} متأخر`, `New · ${lateN} late`) : L('جديدة', 'New')}</span></div>
-    <div class="stat"><b>${by('active').length}</b><span>${L('قيد التنفيذ', 'In progress')}</span></div>
-    <div class="stat"><b>${by('ready').length}</b><span>${L('جاهزة', 'Ready')}</span></div>
-    <div class="stat"><b>${money(todayVal)}</b><span>${L('آخر 24 ساعة', 'Last 24 h')}</span></div>
-  </div>
   ${audioReady() ? '' : `<div class="pad" style="padding-top:8px"><button class="btn wide" data-a="sound">${IC.alert(18)} ${L('فعّل صوت الطلبات الجديدة', 'Turn on the new-order sound')}</button></div>`}
   <div class="pad" style="padding-top:8px"><button class="btn primary wide wk-big" data-a="walkin">${IC.plus(24)} ${L('طلب جديد في المحل', 'New in-store order')}</button></div>
   ${PLANS.length ? `<div class="pad" style="padding-top:8px"><button class="btn wide" data-a="plan">${IC.card(20)} ${L('اشتراك شهري لعميل', 'Monthly plan for a customer')}</button></div>` : ''}
-  <div class="pad sticky"><div class="chips" role="group" aria-label="${L('تصفية الطلبات', 'Filter orders')}">
-    ${tabBtn('new', L('جديدة', 'New'), by('new').length)}${tabBtn('active', L('قيد التنفيذ', 'In progress'), by('active').length)}${tabBtn('ready', L('جاهزة', 'Ready'), by('ready').length)}${tabBtn('done', L('المكتملة', 'Completed'), null)}${tabBtn('settings', L('التشغيل', 'Operations'), null)}
-  </div></div>
+  <div class="pad sticky" role="group" aria-label="${L('تصفية الطلبات', 'Filter orders')}">
+    <div class="stats">
+      ${statBtn('new', lateN ? L(`جديدة · ${lateN} متأخر`, `New · ${lateN} late`) : L('جديدة', 'New'), lateN)}${statBtn('active', L('قيد التنفيذ', 'In progress'))}${statBtn('ready', L('جاهزة', 'Ready'))}
+    </div>
+    <div class="chips">${tabBtn('done', L('المكتملة', 'Completed'))}${tabBtn('settings', L('التشغيل', 'Operations'))}
+      <span class="day-total">${L('آخر 24 ساعة', 'Last 24 h')} <b>${money(todayVal)}</b></span></div>
+  </div>
   <div class="pad">${list ? (list.length ? `<div class="ocards">${list.map(oCard).join('')}</div>` : `<div class="empty"><span class="gi men" aria-hidden="true">${IC.receipt(28)}</span><span>${empties[tab]}</span></div>`) : `<div class="stack" style="padding-top:4px">${oSettings()}</div>`}</div>`;
   paint('o', tab + S.lang, `<div class="scroller">${body}</div>${oCountSheet()}`);
 }
