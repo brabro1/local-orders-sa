@@ -240,7 +240,7 @@ function cardOf(phone) {
   if (!k) return null;
   if (!(k in R.custCache)) {
     R.custCache[k] = undefined;
-    D.getCustomer(k).then(c => { R.custCache[k] = c; if (ui.sheetO && ui.sheetO.type === 'walkin') { wkPreview(ui.sheetO); renderAll(); } }).catch(() => { R.custCache[k] = null; });
+    D.getCustomer(k).then(c => { R.custCache[k] = c; if (ui.sheetO && ui.sheetO.type === 'walkin') wkPreview(ui.sheetO); if (ui.sheetO) renderAll(); }).catch(() => { R.custCache[k] = null; });
   }
   return R.custCache[k] || null;
 }
@@ -655,13 +655,13 @@ function cWallet() {
           <div style="display:flex;align-items:center;gap:10px"><span class="chip ok">${L('مفعّل', 'Active')}</span><b style="font-family:var(--f-display);font-size:17px">${P(plan.name)}</b><span class="muted small" style="margin-inline-start:auto">${money(plan.price)} ${L('شهريًا', '/ month')}</span></div>
           <div><div style="display:flex;justify-content:space-between;font-weight:800"><span>${L('المتبقي هذا الشهر', 'Left this month')}</span><span class="num">${sub.left} / ${plan.pieces}</span></div>
           <span class="prog" role="progressbar" aria-label="${L('المتبقي من الاشتراك', 'Plan remaining')}" aria-valuenow="${sub.left}" aria-valuemin="0" aria-valuemax="${plan.pieces}" style="display:block;margin-top:8px"><i style="width:${Math.max(3, Math.round(sub.left / plan.pieces * 100))}%"></i></span></div>
-          <p class="muted small">${L('يتجدد', 'Renews')} ${dayLabel(dayOffset(sub.renews))} · ${plan.svcs ? L('يغطي الكوي فقط للملابس.', 'Covers pressing of clothes.') : L('يغطي الغسيل والكوي للملابس، ولا يشمل التنظيف الجاف والمفروشات.', 'Covers wash & press for clothes; not dry cleaning or linens.')}</p>
+          <p class="muted small">${L('صالح حتى', 'Valid until')} ${dayLabel(dayOffset(sub.renews))}${L('، وتجدّده من المحل.', ', renew it at the store.')} ${plan.svcs ? L('يغطي الكوي فقط للملابس.', 'Covers pressing of clothes.') : L('يغطي الغسيل والكوي للملابس، ولا يشمل التنظيف الجاف والمفروشات.', 'Covers wash & press for clothes; not dry cleaning or linens.')}</p>
         </div>`
       : `<div class="opts">${PLANS.map(p => `<div class="plan">
           <div style="flex:1;min-width:0"><b>${P(p.name)}</b><span class="muted small" style="display:block">${P(p.note)}</span></div>
           <div class="plan-side"><span class="plan-price">${money(p.price)}</span><span class="muted small">${L('شهريًا', '/ month')}</span></div>
         </div>`).join('')}</div>
-        <p class="muted small" style="margin-top:8px">${L('الاشتراك يتفعّل قريبًا. بعد ما تشترك، يُخصم تلقائيًا في كل طلب من التطبيق أو المحل.', 'Subscriptions open soon. Once active, your plan is used automatically on every order, in the app or at the store.')}</p>`}
+        <p class="muted small" style="margin-top:8px">${L('اشترك من المحل: ادفع عند الكاشير وقل رقم جوالك، ويتفعّل هنا فورًا. بعدها يُخصم تلقائيًا في كل طلب، من التطبيق أو في المحل.', 'Subscribe at the store: pay at the counter and give your mobile number, and it shows here right away. It is then used automatically on every order, in the app or at the store.')}</p>`}
     </section>
   </div>`;
 }
@@ -858,7 +858,7 @@ function oWalkin(sh) {
     <div class="wk-step"><span class="wk-n">3</span>${L('بيانات العميل (اختياري)', 'Customer details (optional)')}</div>
     <div class="field"><label for="wk-phone">${L('الجوال', 'Mobile')}</label>
       <input class="input tel wk-phone" id="wk-phone" data-win="phone" type="tel" inputmode="numeric" dir="ltr" autocomplete="off" placeholder="05XXXXXXXX" value="${esc(sh.phone)}">
-      ${ok ? `<div class="wk-cust">${card ? `<span class="chip brand">${IC.star(13)} ${L('أختام', 'Stamps')} <span class="num">${card.stamps}/${STAMP_GOAL}</span></span>${card.sub ? `<span class="chip ok">${L('اشتراك', 'Plan')}: ${L(`باقي ${card.sub.left}`, `${card.sub.left} left`)}</span>` : ''}${card.rewards ? `<span class="chip ok">${L('له مكافأة', 'Has a reward')}</span>` : ''}` : `<span class="chip">${L('عميل جديد · تنفتح له بطاقة', 'New customer · card opened')}</span>`}</div>` : ''}
+      ${ok ? `<div class="wk-cust">${card ? `<span class="chip brand">${IC.star(13)} ${L('أختام', 'Stamps')} <span class="num">${card.stamps || 0}/${STAMP_GOAL}</span></span>${activeSub(card.sub) ? `<span class="chip ok">${L('اشتراك', 'Plan')}: ${L(`باقي ${card.sub.left}`, `${card.sub.left} left`)}</span>` : ''}${card.rewards ? `<span class="chip ok">${L('له مكافأة', 'Has a reward')}</span>` : ''}` : `<span class="chip">${L('عميل جديد · تنفتح له بطاقة', 'New customer · card opened')}</span>`}</div>` : ''}
     </div>
     <div class="field"><label for="wk-name">${L('الاسم', 'Name')}</label>
       <input class="input wk-name" id="wk-name" data-win="name" type="text" autocomplete="off" maxlength="40" placeholder="${L('مثال: أبو محمد', 'e.g. Abu Mohammed')}" value="${esc(sh.name)}">
@@ -867,6 +867,40 @@ function oWalkin(sh) {
     ${sh.err ? `<div class="notice bad" role="alert">${IC.alert(17)}<span>${esc(sh.err)}</span></div>` : ''}
     <button class="btn primary wide wk-big split" data-a="wksave" ${lines.length && !ui.busy ? '' : 'disabled'} ${ui.busy ? 'aria-busy="true"' : ''}><span>${IC.check(22)} ${ui.busy ? L('جارٍ الحفظ…', 'Saving…') : sh.editN ? L('حفظ التعديل', 'Save changes') : L('حفظ الطلب', 'Save order')}</span><span>${lines.length ? money(t.total) : ''}</span></button>
   </div></div>`;
+}
+/* monthly plan sold at the counter: mobile → plan → "payment received". Big buttons, like the in-store order */
+function oPlanSheet(sh) {
+  const close = `<button class="icon-btn" data-a="closesheet" aria-label="${L('إغلاق', 'Close')}">✕</button>`;
+  const wrap = body => `<div class="sheet-wrap" data-a="closesheet" data-self="1"><div class="sheet pad wk" role="dialog" aria-modal="true" aria-labelledby="pl-title">
+    <div class="grab" aria-hidden="true"></div>${body}</div></div>`;
+  if (sh.done) {
+    const s = sh.done.sub, p = planOf(s.plan);
+    return wrap(`<div class="sheet-head"><span></span>${close}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px">
+        <span class="check-anim" aria-hidden="true">${IC.check(32)}</span>
+        <h2 id="pl-title" tabindex="-1">${L('تم تفعيل الاشتراك', 'Plan is on')}</h2>
+        <p class="muted">${sh.done.name ? `${esc(sh.done.name)} · ` : ''}<span class="num" dir="ltr">${esc(sh.done.phone)}</span></p>
+      </div>
+      <div class="ticket"><span><span class="t-lab">${L('الباقة', 'Plan')}</span><br><b>${esc(P(p.name))}</b></span><span class="perf"></span><span class="t-side">${pcs(s.left)}<br>${L('حتى', 'until')} ${dayLabel(dayOffset(s.renews))}</span></div>
+      <p class="wk-hint">${L('القطع تنخصم تلقائيًا من طلباته، من التطبيق أو في المحل.', 'Pieces come off automatically on their orders, in the app or at the counter.')}</p>
+      <button class="btn primary wide wk-big" data-a="plnew">${IC.plus(22)} ${L('اشتراك لعميل آخر', 'Another customer')}</button>`);
+  }
+  const phone = normPhone(sh.phone), ok = validPhone(phone), card = ok ? cardOf(phone) : null;
+  const cur = card && activeSub(card.sub), curPlan = cur && planOf(cur.plan);
+  const pick = PLANS.find(p => p.id === sh.plan);
+  return wrap(`<div class="sheet-head"><h2 id="pl-title" tabindex="-1">${L('اشتراك شهري', 'Monthly plan')}</h2>${close}</div>
+    <div class="wk-step"><span class="wk-n">1</span>${L('جوال العميل', 'Customer mobile')}</div>
+    <div class="field"><label class="sr" for="pl-phone">${L('جوال العميل', 'Customer mobile')}</label>
+      <input class="input tel wk-phone" id="pl-phone" data-pl="phone" type="tel" inputmode="numeric" dir="ltr" autocomplete="off" placeholder="05XXXXXXXX" value="${esc(sh.phone)}">
+      ${ok ? `<div class="wk-cust">${cur ? `<span class="chip ok">${L('عنده', 'Has')} ${esc(P(curPlan.name))} · ${L(`باقي ${cur.left}`, `${cur.left} left`)}</span>` : card ? `<span class="chip">${esc(card.name || '')} ${L('· ما عنده اشتراك', '· no plan yet')}</span>` : `<span class="chip">${L('عميل جديد', 'New customer')}</span>`}</div>` : ''}
+    </div>
+    ${ok && !(card && card.name) ? `<div class="field"><label for="pl-name">${L('الاسم (اختياري)', 'Name (optional)')}</label><input class="input wk-name" id="pl-name" data-pl="name" type="text" autocomplete="off" maxlength="40" placeholder="${L('مثال: أبو محمد', 'e.g. Abu Mohammed')}" value="${esc(sh.name)}"></div>` : ''}
+    <div class="wk-step"><span class="wk-n">2</span>${L('اختر الباقة', 'Pick the plan')}</div>
+    <div class="plan-picks" role="group" aria-label="${L('الباقات', 'Plans')}">${PLANS.map(p => `<button class="choice" data-a="plpick" data-id="${p.id}" aria-pressed="${sh.plan === p.id}"><b>${esc(P(p.name))}</b><span>${esc(P(p.note))}</span><b class="plan-price">${money(p.price)}</b></button>`).join('')}</div>
+    ${cur ? `<div class="notice warn">${IC.info(17)}<span>${L('عنده اشتراك شغّال. التفعيل يبدأ شهرًا جديدًا من اليوم، والقطع الباقية من الشهر الحالي ما تنتقل.', 'They already have a plan. This starts a new month today; pieces left from the current month do not carry over.')}</span></div>` : ''}
+    ${sh.err ? `<div class="notice bad" role="alert">${IC.alert(17)}<span>${esc(sh.err)}</span></div>` : ''}
+    <div class="wk-step"><span class="wk-n">3</span>${L('استلم المبلغ نقدًا أو بالشبكة، ثم فعّل', 'Take payment by cash or card, then turn it on')}</div>
+    <button class="btn primary wide wk-big split" data-a="plsave" ${ok && pick && !ui.busy ? '' : 'disabled'} ${ui.busy ? 'aria-busy="true"' : ''}><span>${IC.check(22)} ${ui.busy ? L('جارٍ التفعيل…', 'Turning on…') : L('استلمت المبلغ · فعّل', 'Paid · turn on')}</span><span>${pick ? money(pick.price) : ''}</span></button>`);
 }
 const WALKIN_NAME = 'عميل المحل';
 /* the name the shop already has for this mobile: from the customer's card, or an earlier order */
@@ -891,6 +925,7 @@ function oCountSheet() {
   if (!sh) return '';
   if (sh.type === 'prefs') return prefsSheet('o');
   if (sh.type === 'walkin') return oWalkin(sh);
+  if (sh.type === 'plan') return oPlanSheet(sh);
   const o = findOrder(sh.n);
   /* preview of the new bill: recalculate from the counted items, not the order's saved totals */
   const t = calc({ ...o, totals: null, items: sh.items });
@@ -952,6 +987,7 @@ function renderOwner() {
   </div>
   ${audioReady() ? '' : `<div class="pad" style="padding-top:8px"><button class="btn wide" data-a="sound">${IC.alert(18)} ${L('فعّل صوت الطلبات الجديدة', 'Turn on the new-order sound')}</button></div>`}
   <div class="pad" style="padding-top:8px"><button class="btn primary wide wk-big" data-a="walkin">${IC.plus(24)} ${L('طلب جديد في المحل', 'New in-store order')}</button></div>
+  ${PLANS.length ? `<div class="pad" style="padding-top:8px"><button class="btn wide" data-a="plan">${IC.card(20)} ${L('اشتراك شهري لعميل', 'Monthly plan for a customer')}</button></div>` : ''}
   <div class="pad sticky"><div class="chips" role="group" aria-label="${L('تصفية الطلبات', 'Filter orders')}">
     ${tabBtn('new', L('جديدة', 'New'), by('new').length)}${tabBtn('active', L('قيد التنفيذ', 'In progress'), by('active').length)}${tabBtn('ready', L('جاهزة', 'Ready'), by('ready').length)}${tabBtn('done', L('المكتملة', 'Completed'), null)}${tabBtn('settings', L('التشغيل', 'Operations'), null)}
   </div></div>
@@ -1039,6 +1075,7 @@ const REASON_TEXT = {
   'not-rejectable': () => L('الطلب تجاوز مرحلة القبول.', 'The order is past acceptance.'),
   finished: () => L('الطلب مكتمل، فما يتعدّل.', 'A completed order can’t be edited.'),
   'staff-only': () => L('انتهت جلسة الجهاز. أدخل الرمز مرة ثانية.', 'This device was signed out. Enter the PIN again.'),
+  plan: () => L('هذه الباقة غير موجودة. اختر باقة من القائمة.', 'That plan does not exist. Pick one from the list.'),
   network: () => L('تعذّر الاتصال. تأكد من الإنترنت وجرّب مرة ثانية.', 'No connection. Check the internet and try again.'),
 };
 const reasonText = e => (REASON_TEXT[e && e.reason] || (() => L('حدث خطأ. جرّب مرة ثانية.', 'Something went wrong. Try again.')))();
@@ -1237,6 +1274,21 @@ const O = {
     });
     return false;
   },
+  plan() { ui.sheetO = { type: 'plan', phone: '', name: '', plan: null, done: null, err: '' }; },
+  plnew() { O.plan(); },
+  plpick(d) { ui.sheetO.plan = d.id; ui.sheetO.err = ''; },
+  plsave() {
+    const sh = ui.sheetO, phone = normPhone(sh.phone);
+    if (!validPhone(phone) || !sh.plan || ui.busy) return;
+    run('o', async () => {
+      const r = await D.call('setPlan', { phone, plan: sh.plan, name: sh.name.trim() });
+      /* forget the cached card so the next in-store order reads the fresh one */
+      delete R.custCache[e164(phone)];
+      sh.done = r;
+      toast('o', L('تم تفعيل الاشتراك', 'Plan is on'));
+    }, e => { sh.err = reasonText(e); });
+    return false;
+  },
   walkin() { ui.sheetO = { type: 'walkin', lines: {}, svc: 'wash', cat: CATALOG[0] && CATALOG[0].id, phone: '', name: '', done: null, editN: null, err: '' }; wkPreview(ui.sheetO); },
   wkedit(d) {
     const o = findOrder(Number(d.n));
@@ -1314,6 +1366,14 @@ function bind(which, map) {
     if (ev.target.dataset && ev.target.dataset.otp && ui.sheetC && ui.sheetC.type === 'otp') {
       ui.sheetC[ev.target.dataset.otp] = ev.target.value;
       if (ui.sheetC.err) { ui.sheetC.err = ''; ev.target.removeAttribute('aria-invalid'); const er = document.getElementById('otp-err'); if (er) er.remove(); }
+      return;
+    }
+    if (ev.target.dataset && ev.target.dataset.pl && ui.sheetO && ui.sheetO.type === 'plan') {
+      const sh = ui.sheetO;
+      if (ev.target.dataset.pl === 'name') { sh.name = ev.target.value; return; }
+      const before = validPhone(sh.phone);
+      sh.phone = ev.target.value; sh.err = '';
+      if (before !== validPhone(sh.phone)) renderOwner();
       return;
     }
     if (ev.target.dataset && ev.target.dataset.win && ui.sheetO && ui.sheetO.type === 'walkin') {

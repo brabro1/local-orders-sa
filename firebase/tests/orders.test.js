@@ -173,6 +173,34 @@ test('rejecting gives back the reward and frees the slot', async () => {
   assert.equal((await shopRef.collection('slotLoad').doc(`${riyadhDate(1)}_a`).get()).data().count, 0);
 });
 
+test('shop turns on a monthly plan at the counter; the next order uses it', async () => {
+  const phone = newPhone(), local = `0${phone.slice(4)}`;
+  const staff = await staffSignIn(SHOP, demo.pin);
+  const cust = await phoneSignIn(phone);
+  assert.equal((await call('setPlan', { shopId: SHOP, phone: local, plan: 'family' }, cust)).error.message, 'staff-only');
+  assert.equal((await call('setPlan', { shopId: SHOP, phone: local, plan: 'gold' }, staff)).error.message, 'plan');
+  assert.equal((await call('setPlan', { shopId: SHOP, phone: '0123', plan: 'family' }, staff)).error.message, 'phone');
+
+  const r = await call('setPlan', { shopId: SHOP, phone: local, plan: 'solo', name: 'مشترك جديد' }, staff);
+  assert.ok(r.result, JSON.stringify(r));
+  assert.equal(r.result.sub.left, 30);
+  assert.equal(r.result.sub.renews, riyadhDate(30));
+  const c = await custDoc(phone);
+  assert.equal(c.name, 'مشترك جديد');
+  assert.equal(c.sub.plan, 'solo');
+  assert.equal((await shopRef.collection('planSales').where('phone', '==', phone).get()).size, 1);
+
+  // 6 thobes come off the plan: 42 − 42 from the plan + 15 delivery − 4 first order = 11
+  const o = await call('placeOrder', pickup(), cust);
+  assert.equal(o.result.totals.subFree, 42);
+  assert.equal(o.result.totals.total, 11);
+  assert.equal((await custDoc(phone)).sub.left, 24);
+
+  // buying again starts a fresh month with all pieces
+  await call('setPlan', { shopId: SHOP, phone: local, plan: 'family' }, staff);
+  assert.deepEqual([(await custDoc(phone)).sub.plan, (await custDoc(phone)).sub.left], ['family', 70]);
+});
+
 test('staff of one shop cannot touch another shop', async () => {
   const staff = await staffSignIn(SHOP, demo.pin);
   const r = await call('saveWalkin', { shopId: 'other-shop', items: [{ id: 'thobe', svc: 'wash', qty: 1 }] }, staff);
